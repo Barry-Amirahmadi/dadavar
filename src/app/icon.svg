@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" fill="#141A2B"/>
-  <circle cx="19" cy="13" r="7" fill="#7FB3AC"/>
-  <circle cx="12" cy="21" r="4" fill="#EAE9E3" opacity="0.85"/>
+  <!-- DADAVAR mark: a square-kufic dal on the furniture ground. The vertical
+       stroke on the right, the base running left and turning up: the letter
+       the name begins and ends its first syllable with. -->
+  <rect width="32" height="32" fill="#181f26"/>
+  <path d="M19 7h4v18H9v-7h4v3h6z" fill="#f2f1ed"/>
+  <rect x="9" y="27" width="14" height="1" fill="#d9a3b1"/>
 </svg>

@@ -1,430 +1,696 @@
 /* ============================================================================
-   COMPONENT SURFACES
-   Written as CSS classes rather than utility soup so that a colour or a size
-   can only ever change in tokens.css. Tailwind is used for layout — grid
-   spans, flex, order — where it earns its keep.
+   DADAVAR — COMPONENTS
+   Imported into @layer components by globals.css.
+
+   Three rules hold in every block below, and verify.mjs checks all three:
+     · text-align is `start` on prose. Browsers justify Persian by stretching
+       word spaces, not by kashida, and on a narrow column that is rivers.
+     · no `letter-spacing` on any element that can hold Persian. The one
+       tracked element is the Latin half of the wordmark, and it is lang="en".
+     · no `::first-letter`. The initial is a word, wrapped in its own element.
    ========================================================================= */
 
-/* ---- Buttons ------------------------------------------------------------ */
+/* ---- Frame --------------------------------------------------------------- */
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  min-height: 3rem; /* 48px — clears the 44px touch target */
-  padding-inline: var(--space-6);
-  padding-block: var(--space-3);
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: 0;
-  border: 1px solid transparent;
-  border-radius: var(--radius-xs);
-  transition:
-    background-color var(--dur) var(--ease-out),
-    border-color var(--dur) var(--ease-out),
-    color var(--dur) var(--ease-out);
+.wrap {
+  width: 100%;
+  max-width: calc(var(--page-max) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
 }
 
-.btn--primary {
-  background-color: var(--color-sormeh);
-  color: var(--color-chalk);
-}
-.btn--primary:hover {
-  background-color: color-mix(in srgb, var(--color-sormeh) 84%, var(--color-firouzeh));
+.band {
+  padding-block: var(--band);
 }
 
-.btn--secondary {
-  border-color: var(--color-line-strong);
-  color: var(--color-ink);
-}
-.btn--secondary:hover {
-  border-color: var(--color-ink);
-  background-color: color-mix(in srgb, var(--color-ink) 5%, transparent);
+.band-flush {
+  padding-block-start: 0;
 }
 
-.on-dark .btn--primary {
-  background-color: var(--color-firouzeh-bright);
-  color: var(--color-sormeh);
-}
-.on-dark .btn--primary:hover {
-  background-color: color-mix(in srgb, var(--color-firouzeh-bright) 82%, #ffffff);
-}
-.on-dark .btn--secondary {
-  border-color: var(--color-line-dark-strong);
-  color: var(--color-chalk);
-}
-.on-dark .btn--secondary:hover {
-  border-color: var(--color-chalk);
-  background-color: color-mix(in srgb, var(--color-chalk) 8%, transparent);
+.band-tint {
+  background-color: var(--paper-tint);
 }
 
-/* ---- Lead link — the "next" affordance ---------------------------------- */
-
-.link-lead {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 2.75rem;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--color-ink);
-}
-.on-dark .link-lead {
-  color: var(--color-chalk);
+.measure {
+  max-width: var(--measure);
 }
 
-.link-lead__text {
-  border-bottom: 1px solid var(--color-line-strong);
-  padding-bottom: 2px;
-  transition: border-color var(--dur) var(--ease-out);
-}
-.link-lead:hover .link-lead__text {
-  border-color: var(--color-firouzeh-deep);
-}
-.on-dark .link-lead__text {
-  border-bottom-color: var(--color-line-dark-strong);
-}
-.on-dark .link-lead:hover .link-lead__text {
-  border-bottom-color: var(--color-firouzeh-bright);
+.ground-furniture {
+  background-color: var(--furniture);
+  color: var(--paper-inv);
 }
 
-/* ---- Name link — a heading that navigates ------------------------------- */
-/* Distinct from .link-lead, which sets its own small type size: this one
-   inherits whatever heading it is placed in, so the product name stays the
-   size the type scale gave it. */
-
-.name-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-block-size: 2.75rem;
-}
-.name-link__text {
-  border-block-end: 1px solid transparent;
-  padding-block-end: 0.08em;
-  transition: border-color var(--dur) var(--ease-out);
-}
-.name-link:hover .name-link__text,
-.name-link:focus-visible .name-link__text {
-  border-block-end-color: currentColor;
+.ground-furniture a {
+  color: var(--oxblood-soft);
+  text-decoration-color: color-mix(in srgb, var(--oxblood-soft) 60%, transparent);
 }
 
-/* ---- Collection page ---------------------------------------------------- */
+/* ---- Masthead ------------------------------------------------------------ *
+   The nameplate of a journal: at the top of the document, not sticky, not
+   floating, not translucent. */
 
-/* Contents line under the masthead: the category index at the start edge, the
-   total at the end. Wraps to two lines on a phone rather than scrolling. */
-/* The index is the one thing on the collection page that is an object rather
-   than a piece of the page: a standing list you consult, not prose you read
-   through. It was a hairline strip, which made it read as the last line of the
-   masthead above it. It sits on the raised plane now — see the depth note in
-   globals.css — so it separates from the page as the thing it is. */
-.collection-index {
+.masthead-inner {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2) var(--space-6);
-  margin-block-start: var(--section-y-tight);
-  padding: var(--space-4) var(--space-6);
+  gap: 0.5rem 2.5rem;
+  padding-block: 1.1rem 0.9rem;
+  border-block-end: 1px solid var(--rule-inv);
 }
 
-.collection-index__list {
+.masthead {
+  padding-block-end: 0.35rem;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  color: var(--paper-inv);
+  text-decoration: none;
+}
+
+.ground-furniture .wordmark {
+  color: var(--paper-inv);
+  text-decoration: none;
+}
+
+.wordmark-fa {
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* The only tracked text on the site, and it is Latin: lang="en" on the
+   element, no Persian inside it. */
+.wordmark-latin {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  line-height: 1;
+}
+
+.masthead-nav ul {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 var(--space-6);
+  gap: 0 1.5rem;
 }
 
-.collection-index__link {
+.masthead-nav a,
+.ground-furniture .masthead-nav a {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  min-block-size: 2.75rem;
-  font-size: var(--text-sm);
-  color: var(--color-ink-2);
-  transition: color var(--dur-fast) var(--ease-out);
-}
-.collection-index__link:hover {
-  color: var(--color-ink);
+  min-height: 2.75rem;
+  color: var(--paper-inv);
+  font-size: var(--text-small);
+  text-decoration-color: color-mix(in srgb, var(--oxblood-soft) 70%, transparent);
 }
 
-.collection-index__count {
-  font-size: var(--text-meta);
-  color: var(--color-ink-3);
+/* ---- Home: nameplate ----------------------------------------------------- */
+
+.nameplate {
+  padding-block: clamp(2.5rem, 1.5rem + 4vw, 5rem) 0;
 }
 
-/* The collection breathes more than a section does — the vertical offsets in
-   the arrangements are what make the top edge move, and they only read as
-   composition if the rows are far enough apart to be separate rows. */
-.collection-grid {
-  row-gap: var(--space-9);
+.nameplate-inner {
+  padding-block-end: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  border-block-end: 3px solid var(--ink);
 }
-@media (min-width: 64rem) {
-  .collection-grid {
-    row-gap: var(--space-10);
+
+.nameplate-mark {
+  font-family: var(--font-display);
+  font-size: var(--text-nameplate);
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.nameplate-line {
+  margin-block-start: 0.75rem;
+  font-size: var(--text-standfirst);
+  line-height: 1.7;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+/* ---- Section opener ------------------------------------------------------ *
+   A numeral in display type, a hairline rule, and the title. The only
+   repeating ornament on the site, and it does all the rhythmic work. */
+
+.opener {
+  display: grid;
+  gap: 0.85rem;
+  margin-block-end: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+}
+
+.opener-numeral {
+  font-family: var(--font-display);
+  font-size: var(--text-numeral);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--oxblood);
+}
+
+.opener-rule {
+  display: block;
+  height: 1px;
+  background-color: var(--oxblood);
+}
+
+.opener-title {
+  font-size: var(--text-title);
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.opener-kicker {
+  font-size: var(--text-small);
+  color: var(--ink-soft);
+}
+
+.opener-sm {
+  gap: 0.6rem;
+  margin-block-end: 1.25rem;
+}
+
+.opener-sm .opener-numeral {
+  font-size: var(--text-numeral-sm);
+}
+
+.opener-sm .opener-title {
+  font-size: clamp(1.375rem, 1.2rem + 0.6vw, 1.625rem);
+}
+
+/* ---- Page head --------------------------------------------------------- */
+
+.page-head {
+  margin-block-end: clamp(2.25rem, 1.75rem + 2vw, 3.5rem);
+}
+
+/* ---- Standfirst ---------------------------------------------------------- */
+
+.standfirst {
+  max-width: 40rem;
+  font-size: var(--text-standfirst);
+  line-height: 1.75;
+  color: var(--ink-soft);
+  text-align: start;
+  text-wrap: pretty;
+}
+
+/* ---- Prose --------------------------------------------------------------- */
+
+.prose {
+  text-align: start;
+  hyphens: none;
+  orphans: 2;
+  widows: 2;
+}
+
+.prose p + p {
+  margin-block-start: 0.85em;
+}
+
+.prose .subhead {
+  margin-block: 1.5em 0.35em;
+  font-size: var(--text-subhead);
+  line-height: 1.6;
+  color: var(--ink);
+  break-inside: avoid;
+  break-after: avoid;
+}
+
+.prose .segment:first-child > .subhead:first-child {
+  margin-block-start: 0;
+}
+
+/* Two columns from 900px, one below it — never two on a phone. In an RTL
+   container the first column is the rightmost; verify.mjs measures that
+   rather than trusting it. */
+.cols {
+  column-count: 1;
+  column-gap: var(--column-gap);
+  column-rule: 1px solid var(--rule);
+}
+
+@media (min-width: 900px) {
+  .cols {
+    column-count: 2;
   }
 }
 
-/* Category and transliteration on one hairline, the way a caption sits under a
-   plate. The rule is what ties the block to the image above it. */
-.collection-item__meta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4);
-  margin-block-start: var(--space-4);
-  padding-block-start: var(--space-3);
-  border-block-start: 1px solid var(--color-line);
-  transition: border-color var(--dur) var(--ease-out);
-}
-.on-dark .collection-item__meta {
-  border-block-start-color: var(--color-line-dark);
-}
-.group-media:hover .collection-item__meta {
-  border-block-start-color: var(--color-firouzeh-bright);
-}
-
-/* ---- Section header rule ------------------------------------------------ */
-
-.section-head {
-  border-block-start: 1px solid var(--color-line);
-  padding-block-start: var(--space-5);
-}
-.on-dark .section-head {
-  border-block-start-color: var(--color-line-dark);
-}
-
-/* ---- Eyebrow ------------------------------------------------------------ */
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: var(--text-meta);
+/* The word-scale initial. Persian is cursive, and `::first-letter` would pull
+   a joined initial form out of its word; the first words are set large instead,
+   every join intact. */
+.initial {
+  font-family: var(--font-display);
+  font-size: 1.5em;
   font-weight: 500;
-  line-height: 1.4;
-  color: var(--color-ink-3);
-}
-.eyebrow::before {
-  content: "";
-  inline-size: 2.25rem;
-  block-size: 1px;
-  background-color: var(--color-firouzeh);
-  flex: none;
-}
-.on-dark .eyebrow {
-  color: var(--color-chalk-2);
-}
-.on-dark .eyebrow::before {
-  background-color: var(--color-firouzeh-bright);
+  line-height: 1;
+  color: var(--oxblood);
 }
 
-/* ---- Tone swatch — the product's own shade, shown literally -------------- */
-
-.tone-swatch {
-  inline-size: 0.75rem;
-  block-size: 0.75rem;
-  border-radius: var(--radius-full);
-  flex: none;
-  box-shadow: 0 0 0 1px var(--color-line-dark-strong);
+/* Reference marks. A real link to a note, raised by position rather than by a
+   <sup> element; its form, not its colour, marks it as a reference. */
+.refmark {
+  display: inline-block;
+  scroll-margin-block: 30vh;
+  padding-inline: 0.12em;
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: super;
+  text-decoration: none;
+  color: var(--oxblood);
 }
 
-/* ---- Navigation --------------------------------------------------------- */
-
-.site-header {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 50;
-  background-color: color-mix(in srgb, var(--color-bone) 82%, transparent);
-  backdrop-filter: blur(14px);
-  border-block-end: 1px solid transparent;
-  transition:
-    border-color var(--dur) var(--ease-out),
-    background-color var(--dur) var(--ease-out);
-}
-.site-header[data-scrolled="true"] {
-  border-block-end-color: var(--color-line);
-  background-color: color-mix(in srgb, var(--color-bone) 94%, transparent);
-  /* The expensive half of the sticky header, removed at exactly the moment it
-     stops being visible. A sticky element with a backdrop-filter re-blurs the
-     content behind it on every scrolled frame; at 94% opacity only 6% of that
-     backdrop shows through, so the blur costs a full frame budget to draw
-     something no one can see. Measured on the gallery route: worst frame
-     50.0ms with the blur, 16.8ms without. Keep this paired with the 94%
-     background — if that opacity ever drops, the blur has to come back. */
-  backdrop-filter: none;
+.refmark:target,
+.note:target .note-title {
+  background-color: var(--paper-tint);
+  box-shadow: 0 0 0 0.2em var(--paper-tint);
 }
 
-.nav-link {
-  position: relative;
+/* ---- The essay: prose beside a marginal note ----------------------------- *
+   Every cell names its row and its column, at every width — see cells.ts for
+   the auto-placement defect this avoids.
+
+     < 900px     one track. The body wrapper is display: contents, so its three
+                 segments become grid cells and the note sits between the first
+                 and the second — a block between paragraphs, not a box.
+     900–1199px  one track, two text columns. The note sits below the body at
+                 the outer edge.
+     ≥ 1200px    two tracks. The note has its own column beside the second text
+                 column, at the outer (left) edge.
+
+   Never float, never absolute. verify.mjs measures the leaves, not the
+   display: contents wrapper, which has no box. */
+
+.essay {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--flow);
+}
+
+.cell {
+  grid-row: var(--row-n);
+  grid-column: var(--col-n);
+}
+
+@media (max-width: 899.98px) {
+  .essay-body {
+    display: contents;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1199.98px) {
+  .cell {
+    grid-row: var(--row-m);
+    grid-column: var(--col-m);
+  }
+
+  .essay > .marginal {
+    justify-self: end;
+    max-width: 24rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .essay {
+    grid-template-columns: minmax(0, 1fr) var(--margin-w);
+    column-gap: 3.5rem;
+  }
+
+  .cell {
+    grid-row: var(--row-w);
+    grid-column: var(--col-w);
+  }
+
+  .essay > .marginal {
+    align-self: start;
+    margin-block-start: 0.4rem;
+  }
+}
+
+.marginal {
+  padding: 1.1rem 1.25rem 1.2rem;
+  background-color: var(--paper-tint);
+  border-inline-start: 2px solid var(--oxblood);
+  font-size: var(--text-small);
+  line-height: 1.85;
+  color: var(--ink-soft);
+  text-align: start;
+  break-inside: avoid;
+}
+
+/* ---- Plate --------------------------------------------------------------- */
+
+.plate {
+  margin-block: 0 clamp(2rem, 1.5rem + 2vw, 3rem);
+  break-inside: avoid;
+}
+
+.plate-3-2 {
+  max-width: 46rem;
+}
+
+.plate-1-1 {
+  max-width: 26rem;
+}
+
+.plate img {
+  width: 100%;
+  height: auto;
+  background-color: var(--paper-tint);
+}
+
+.plate figcaption {
+  margin-block-start: 0.6rem;
+  font-size: var(--text-small);
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+/* ---- Pull-quote ---------------------------------------------------------- *
+   The one place on the site where type gets loud. */
+
+.pullquote {
+  border-block: 2px solid var(--furniture);
+}
+
+.pullquote-text {
+  max-width: 52rem;
+  margin-inline: auto;
+  padding-block: clamp(2.5rem, 1.5rem + 4vw, 5rem);
+  font-family: var(--font-display);
+  font-size: var(--text-quote);
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--ink);
+  text-align: center;
+  text-wrap: balance;
+  break-inside: avoid;
+}
+
+/* ---- Area index ---------------------------------------------------------- */
+
+.area-index {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.75rem var(--column-gap);
+}
+
+@media (min-width: 900px) {
+  .area-index-columns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .area-index-columns > .cell {
+    grid-row: var(--row-w);
+    grid-column: var(--col-w);
+  }
+}
+
+.area-list > li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  column-gap: 0.75rem;
+  padding-block: 1rem 1.1rem;
+  border-block-start: 1px solid var(--rule);
+}
+
+.area-list > li:last-child {
+  border-block-end: 1px solid var(--rule);
+}
+
+.area-num {
+  grid-row: 1 / span 2;
+  grid-column: 1;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  line-height: 1.5;
+  color: var(--oxblood);
+}
+
+.area-title {
+  grid-row: 1;
+  grid-column: 2;
+  font-size: var(--text-subhead);
+  line-height: 1.6;
+}
+
+.area-title a {
+  color: var(--ink);
+  text-decoration-color: var(--oxblood);
+}
+
+.area-clause {
+  grid-row: 2;
+  grid-column: 2;
+  margin-block-start: 0.25rem;
+  font-size: var(--text-small);
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+/* The /practice/ variant: one group per row, the clause beside the title. */
+@media (min-width: 900px) {
+  .area-index-rows > .cell {
+    display: grid;
+    grid-template-columns: 16rem minmax(0, 1fr);
+    column-gap: var(--column-gap);
+  }
+
+  .area-index-rows .opener {
+    grid-row: 1;
+    grid-column: 1;
+    align-self: start;
+  }
+
+  .area-index-rows .area-list {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .area-index-rows .area-list > li {
+    grid-template-columns: 2.5rem minmax(0, 17rem) minmax(0, 1fr);
+    align-items: baseline;
+  }
+
+  .area-index-rows .area-num {
+    grid-row: 1;
+  }
+
+  .area-index-rows .area-clause {
+    grid-row: 1;
+    grid-column: 3;
+    margin-block-start: 0;
+  }
+}
+
+.index-foot {
+  margin-block-start: 2rem;
+}
+
+/* ---- Home: statement and index label ------------------------------------ */
+
+.statement {
+  max-width: 60rem;
+}
+
+.index-label {
+  margin-block-end: 2rem;
+}
+
+/* ---- Home: method -------------------------------------------------------- */
+
+.method {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem 4rem;
+}
+
+@media (min-width: 1200px) {
+  .method {
+    grid-template-columns: minmax(0, var(--measure)) minmax(0, 1fr);
+  }
+
+  .method > .cell {
+    grid-row: var(--row-w);
+    grid-column: var(--col-w);
+  }
+
+  .method .plate {
+    margin-block-end: 0;
+  }
+}
+
+.cta {
+  margin-block-start: 2.5rem;
+  padding-block-start: 1.75rem;
+  border-block-start: 1px solid var(--rule);
+}
+
+.cta-heading {
+  font-size: var(--text-subhead);
+  line-height: 1.6;
+}
+
+.cta-body {
+  margin-block-start: 0.4rem;
+  color: var(--ink-soft);
+}
+
+.cta-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 2rem;
+  margin-block-start: 0.75rem;
+}
+
+.cta-links a {
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
-  padding-inline: var(--space-3);
-  font-size: var(--text-sm);
-  color: var(--color-ink-2);
-  transition: color var(--dur-fast) var(--ease-out);
-}
-.nav-link::after {
-  content: "";
-  position: absolute;
-  inset-block-end: 0.55rem;
-  inset-inline: var(--space-3);
-  block-size: 1px;
-  background-color: var(--color-firouzeh-deep);
-  scale: 0 1;
-  transform-origin: var(--nav-origin, right);
-  transition: scale var(--dur) var(--ease-out);
-}
-.nav-link:hover,
-.nav-link[aria-current] {
-  color: var(--color-ink);
-}
-.nav-link:hover::after,
-.nav-link[aria-current]::after {
-  scale: 1 1;
+  font-size: var(--text-subhead);
+  font-weight: 700;
 }
 
-/* ---- Mobile navigation panel -------------------------------------------- */
+/* ---- Link lists: related areas, onward, 404 actions ---------------------- */
 
-.menu-panel {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
+.linkset {
+  margin-block-start: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+  padding-block-start: 1.5rem;
+  border-block-start: 1px solid var(--rule);
+}
+
+.linkset-heading {
+  font-size: var(--text-small);
+  font-weight: 700;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.linkset ul {
   display: flex;
-  flex-direction: column;
-  background-color: var(--color-sormeh);
-  color: var(--color-chalk);
-  transform: translate3d(calc(var(--flow-start) * 100%), 0, 0);
-  visibility: hidden;
-  transition:
-    transform var(--dur-slow) var(--ease-in-out),
-    visibility 0s linear var(--dur-slow);
-}
-.menu-panel[data-open="true"] {
-  transform: translate3d(0, 0, 0);
-  visibility: visible;
-  transition:
-    transform var(--dur-slow) var(--ease-in-out),
-    visibility 0s;
+  flex-wrap: wrap;
+  gap: 0 2rem;
+  margin-block-start: 0.35rem;
 }
 
-.menu-panel__link {
-  display: block;
-  padding-block: var(--space-4);
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 9vw, 3rem);
-  line-height: 1.3;
-  color: var(--color-chalk);
-  border-block-end: 1px solid var(--color-line-dark);
-  opacity: 0;
-  transform: translate3d(calc(var(--flow-start) * 1.25rem), 0, 0);
-  transition:
-    opacity var(--dur) var(--ease-out),
-    transform var(--dur) var(--ease-out);
-}
-.menu-panel[data-open="true"] .menu-panel__link {
-  opacity: 1;
-  transform: none;
-  transition-delay: calc(140ms + var(--i, 0) * 60ms);
-}
-
-.menu-toggle {
+.linkset a {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  inline-size: 2.75rem;
-  block-size: 2.75rem;
-  margin-inline-end: calc(var(--space-3) * -1);
-}
-.menu-toggle__bar {
-  display: block;
-  block-size: 1px;
-  background-color: currentColor;
-  transition:
-    translate var(--dur) var(--ease-out),
-    rotate var(--dur) var(--ease-out),
-    opacity var(--dur-fast) var(--ease-out),
-    inline-size var(--dur) var(--ease-out);
+  min-height: 2.75rem;
 }
 
-/* ---- Gallery ------------------------------------------------------------ */
+/* ---- Notes --------------------------------------------------------------- */
 
-.gallery-tile {
-  display: block;
-  inline-size: 100%;
-  text-align: start;
-  cursor: zoom-in;
+.note + .note {
+  margin-block-start: var(--band);
 }
 
-.gallery-tile__meta {
+.note-body {
+  max-width: var(--measure);
+}
+
+.backrefs {
+  max-width: var(--measure);
+  margin-block-start: 1.75rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid var(--rule);
+}
+
+.backrefs-heading {
+  font-size: var(--text-small);
+  font-weight: 700;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.backrefs ul {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding-block-start: var(--space-3);
-  border-block-start: 1px solid var(--color-line);
-  margin-block-start: var(--space-3);
-  transition: border-color var(--dur) var(--ease-out);
-}
-.on-dark .gallery-tile__meta {
-  border-block-start-color: var(--color-line-dark);
-}
-.gallery-tile:hover .gallery-tile__meta {
-  border-block-start-color: var(--color-firouzeh);
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
+  margin-block-start: 0.25rem;
 }
 
-/* ---- Lightbox ----------------------------------------------------------- */
-
-.lightbox {
-  border: 0;
-  padding: 0;
-  max-inline-size: 100vw;
-  max-block-size: 100vh;
-  inline-size: 100vw;
-  block-size: 100dvh;
-  background-color: transparent;
-  color: var(--color-chalk);
-  overflow: hidden;
-}
-.lightbox::backdrop {
-  /* Near-opaque on purpose: a translucent backdrop over the light gallery
-     ground behind it made the enlarged image look washed out. */
-  background-color: #0d1220;
-}
-
-/* ---- Footer and menu links ---------------------------------------------- */
-/* Text links in a dense list still need a finger-sized hit area. The height
-   comes from the link itself so the list gap can stay at zero and the block
-   does not grow taller than the design intends. */
-
-.footer-link {
+.backrefs a {
   display: inline-flex;
   align-items: center;
-  min-block-size: 2.75rem;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-.footer-link:hover {
-  color: var(--color-chalk);
+  min-height: 2.5rem;
+  font-size: var(--text-small);
 }
 
-/* ---- Breadcrumb --------------------------------------------------------- */
-/* Same reasoning as .footer-link: small metadata type still needs a
-   finger-sized hit area, and the height has to come from the link rather than
-   from padding on the row, or the trail grows taller than the design intends. */
+/* ---- About --------------------------------------------------------------- */
 
-.crumb {
+.about-section + .about-section {
+  margin-block-start: 2.75rem;
+}
+
+.about-section .prose {
+  max-width: var(--measure);
+}
+
+/* ---- Colophon ------------------------------------------------------------ */
+
+.colophon {
+  padding-block: 3.5rem 2rem;
+  font-size: var(--text-small);
+  line-height: 1.85;
+}
+
+.colophon-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.25rem var(--column-gap);
+}
+
+@media (min-width: 900px) {
+  .colophon-grid {
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+  }
+
+  .colophon-grid > .cell {
+    grid-row: var(--row-w);
+    grid-column: var(--col-w);
+  }
+}
+
+.colophon .wordmark-fa {
+  font-size: 1.625rem;
+}
+
+.colophon-line {
+  margin-block-start: 0.5rem;
+  max-width: 24rem;
+}
+
+.colophon-heading {
+  margin-block-end: 0.35rem;
+  font-size: var(--text-small);
+  font-weight: 700;
+  color: var(--paper-inv);
+}
+
+.colophon ul a {
   display: inline-flex;
   align-items: center;
-  min-block-size: 2.75rem;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-.crumb:hover {
-  color: var(--color-ink);
-}
-.on-dark .crumb:hover {
-  color: var(--color-chalk);
+  min-height: 2.25rem;
 }
 
+.colophon-foot {
+  display: grid;
+  gap: 0.5rem;
+  margin-block-start: 3rem;
+  padding-block-start: 1.25rem;
+  border-block-start: 1px solid var(--rule-inv);
+}
+
+/* ---- 404 ----------------------------------------------------------------- */
+
+.notfound-lead {
+  max-width: var(--measure);
+}

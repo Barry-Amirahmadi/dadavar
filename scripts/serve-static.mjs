@@ -9,7 +9,7 @@
  *
  * Deliberately zero-dependency — Node built-ins only.
  *
- *   node scripts/serve-static.mjs --port 4321 --base /parnian-cosmetics
+ *   node scripts/serve-static.mjs --port 4417 --base dadavar
  */
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
@@ -30,14 +30,14 @@ const port = Number(flag("port", "4321"));
 let base = flag("base", "").replace(/\/+$/, "");
 
 // Git Bash on Windows rewrites a leading-slash argument into a native path
-// ("/parnian-cosmetics" -> "C:/Program Files/Git/parnian-cosmetics"), which
+// ("/dadavar" -> "C:/Program Files/Git/dadavar"), which
 // would otherwise show up as every single route 404ing for no visible reason.
 if (/^[A-Za-z]:/.test(base)) {
   console.error(
     [
       `Base path arrived mangled as "${base}".`,
       "The shell rewrote it into a Windows path. Re-run with MSYS_NO_PATHCONV=1,",
-      "or pass it without a leading slash: --base parnian-cosmetics",
+      "or pass it without a leading slash: --base dadavar",
     ].join("\n"),
   );
   process.exit(1);

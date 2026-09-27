@@ -3,7 +3,7 @@
  *
  * Exists because setting an env var inline is not portable: cmd.exe has no
  * `VAR=x cmd` form, and Git Bash rewrites a leading-slash value into a Windows
- * path ("/cosmetics" -> "C:/Program Files/Git/cosmetics"), which the build then
+ * path ("/dadavar" -> "C:/Program Files/Git/dadavar"), which the build then
  * rejects. Setting it here sidesteps both.
  *
  *   node scripts/build-pages.mjs            # defaults to the deployed base path

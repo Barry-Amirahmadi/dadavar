@@ -490,3 +490,20 @@ This does not relax anything already shipped — §13 (accessibility), §41 (sta
 §41 already covers `basePath`/`assetPrefix` for routing and assets. Phase 04 found the same split has a second, separate trap for anything that needs a *full URL* rather than a route: `actions/configure-pages` reports `origin` (`https://user.github.io`) and `base_path` (`/repo-name`) as two outputs, and a project site only actually lives at the two joined. Building a canonical, an `og:url`, or a sitemap entry from `origin` alone produces a URL that resolves to whatever else that GitHub account publishes — **silently correct until the first canonical is added**, then actively wrong (a canonical pointing at the wrong site outranks having none, because it tells a search engine to index that page instead of this one).
 
 Fixed once, centrally, in `src/lib/seo.ts` (`siteRoot = origin + basePath`, everything absolute goes through `absoluteUrl()`) — read that file's header comment for the full reasoning rather than repeating it here. The rule for any future code that needs a full URL: go through `src/lib/seo.ts`, never compose one from `NEXT_PUBLIC_SITE_URL` directly.
+
+## 54 — DADAVAR: THIS REPOSITORY KEEPS THE ENGINE AND THE ROUTE SHAPE, AND REPLACES EVERYTHING ELSE (2026-09-27)
+
+Everything above this section is PARNIAN's handoff, kept as the engine's record — §41 and §53 (static export, base path, origin), §52 (typed content, accessible names as content) and the defect list still apply here unchanged.
+
+`dadavar-law/` was copied from PARNIAN and **keeps the engine**: Next static export, `basePath` handling, `src/lib/seo.ts`, `withBasePath`, the RSC-payload flattening postbuild, the zero-dependency static server and the Pages workflow. It **keeps the route shape** — five routes plus the 404 — and **replaces the design and the content entirely**: an editorial-authority site for a fictional Persian law firm, ink and paper with one oxblood accent, `Noto Naskh Arabic` for reading and `Reem Kufi` for the wordmark, numerals, pull-quote and the word-scale initial.
+
+Two routes are repurposed: `/products/` became `/practice/` (nine practice areas in three groups, each an essay at `/practice/[slug]/`), and `/gallery/` became `/notes/` (three pieces of commentary, the destination of every reference mark). A law firm has no gallery and does have commentary.
+
+What replaced PARNIAN's machinery, and where it lives:
+
+- **Grid placement.** Every grid cell names its row *and* column at every breakpoint, through `src/components/cells.ts` — the `ProductRow` auto-placement defect in the form this site would have hit it, a marginal note beside a prose column.
+- **Reference marks.** Twenty-one marks point at three notes; ids and back-references are both derived from `src/content/refs.ts`, so neither end can drift.
+- **Verification.** `scripts/verify.mjs` is the measurement pass (contrast, line length, column direction, the marginal-note grid, glyph coverage, the legal red-line grep over the built output). The smoke suite was rewritten for this architecture; the lightbox and mobile-menu tests left with those features.
+- **Legal red lines.** No licence, bar membership, outcome, client, award, founding year, named person, real statute or second-person advice. The grep in `verify.mjs` fails the build on the strings that would cross them.
+
+`CMS-INTEGRATION-PLAN.md` is PARNIAN's plan and is kept deliberately: a firm that publishes commentary is the strongest CMS case in the family. Read "product" there as "practice area" and "gallery" as "notes".

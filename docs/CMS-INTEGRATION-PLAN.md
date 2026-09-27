@@ -1,5 +1,7 @@
 # PARNIAN — CMS integration plan
 
+> **Kept in DADAVAR on purpose.** This plan was written for PARNIAN, the template this repository was copied from, and it still describes this engine. Read "product" as "practice area" and "gallery" as "notes" — a firm that publishes commentary is the strongest CMS case in the family. See `MASTER-HANDOFF.md` §54.
+
 **Status:** plan only. Nothing in this document has been built.
 **Written:** 2026-09-19, against commit `36e3e4f`.
 **Scope:** what it takes to hand this template to a paying client who must be

@@ -18,7 +18,7 @@ import { basePath } from "./basePath";
  * site is worse than none at all, because it actively tells a search engine to
  * index that one instead.
  */
-const rawOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://parnian.example";
+const rawOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dadavar.example";
 
 export const origin = rawOrigin.replace(/\/+$/, "");
 
@@ -28,13 +28,6 @@ export const siteRoot = `${origin}${basePath}`;
 export function absoluteUrl(path = "/"): string {
   return `${siteRoot}${path.startsWith("/") ? path : `/${path}`}`;
 }
-
-/**
- * The crawlable root, as a path. `/` at the origin, `/repo/` under a base path.
- * robots.txt takes paths rather than URLs, so this is the one place the base
- * path is needed on its own.
- */
-export const basePathForRobots = basePath ? `${basePath}/` : "/";
 
 const ogImage = {
   url: absoluteUrl(site.seo.ogImage.src),
@@ -61,7 +54,7 @@ interface PageMeta {
  *
  * Two Next behaviours this works around deliberately:
  *
- * - The title is set as `absolute`, bypassing the root's `%s — پرنیان`
+ * - The title is set as `absolute`, bypassing the root's `%s — دادآور`
  *   template, and the same composed string is used for `og:title`. The template
  *   applies to `<title>` only, so routing both through one variable is what
  *   keeps them from drifting apart again.

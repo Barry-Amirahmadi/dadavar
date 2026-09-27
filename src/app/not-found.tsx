@@ -1,21 +1,27 @@
-import { notFound } from "@/content/sections";
-import { Section } from "@/components/layout/Section";
-import { Button } from "@/components/ui/Button";
-import { Eyebrow } from "@/components/ui/Eyebrow";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound as copy } from "@/content/pages";
+import { SectionOpener } from "@/components/SectionOpener";
+import { toFa } from "@/lib/digits";
+
+export const metadata: Metadata = {
+  title: copy.heading,
+};
 
 export default function NotFound() {
   return (
-    <Section>
-      <div className="grid-editorial">
-        <div className="col-span-4 flex flex-col gap-6 md:col-span-8 lg:col-span-6">
-          <Eyebrow>{notFound.eyebrow}</Eyebrow>
-          <h1 className="t-h1">{notFound.heading}</h1>
-          <p className="t-lead">{notFound.lead}</p>
-          <div>
-            <Button href={notFound.action.href}>{notFound.action.label}</Button>
-          </div>
-        </div>
-      </div>
-    </Section>
+    <div className="wrap band">
+      <SectionOpener numeral={toFa(404)} title={copy.heading} level={1} />
+      <p className="standfirst notfound-lead">{copy.lead}</p>
+      <nav className="linkset" aria-label={copy.heading}>
+        <ul>
+          {copy.actions.map((action) => (
+            <li key={action.href}>
+              <Link href={action.href}>{action.label}</Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
   );
 }

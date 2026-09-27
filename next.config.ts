@@ -12,7 +12,7 @@ import type { NextConfig } from "next";
  * in. Locally it defaults to the root, and can be overridden to reproduce the
  * deployed layout exactly:
  *
- *   NEXT_PUBLIC_BASE_PATH=/parnian-cosmetics npm run build
+ *   NEXT_PUBLIC_BASE_PATH=/dadavar npm run build
  *
  * The value is normalised because `configure-pages` reports the root as "/",
  * which Next rejects as a basePath.

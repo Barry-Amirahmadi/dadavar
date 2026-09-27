@@ -1,52 +1,53 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * Smoke pass — deliberately small.
+ * Smoke pass — DADAVAR.
  *
- * Scope is the regression baseline the architect approved: the site renders,
- * it is genuinely RTL, the lightbox opens, a product route survives a hard load
- * under the base path, and nothing 404s. It is not coverage, and it should not
- * grow into coverage — add cases when a page is added, not speculatively.
+ * Deliberately small: the site renders and is RTL, every route survives a hard
+ * load under the base path, the reference marks and the notes find each other
+ * in both directions, every route carries its own metadata, and the site says
+ * nothing about itself that is not true. Measurement — contrast, line length,
+ * column direction, the marginal-note grid, the red-line grep — lives in
+ * `scripts/verify.mjs`, not here.
  *
- * Every assertion here corresponds to a defect that actually happened, which is
- * the only reason each one is worth a test.
+ * Rewritten for this architecture from the engine's suite. Kept: the
+ * nameless-control check, the console/response watch, per-route metadata
+ * uniqueness, sitemap/robots, structured data, the 404. Removed with the
+ * features they tested, which this site does not have: the gallery lightbox and
+ * the mobile menu.
  */
 
-/**
- * The deployment base path. Spelled out rather than folded into `baseURL`:
- * these tests exist largely to catch base-path regressions, so it should be
- * visible at every call site.
- */
-const rawBase = process.env.SMOKE_BASE_PATH ?? "/cosmetics";
+const rawBase = process.env.SMOKE_BASE_PATH ?? "/dadavar";
 const BASE = rawBase === "/" ? "" : rawBase.replace(/\/+$/, "");
 
-/** Persian digits back to a number, so a rendered count can be compared. */
-function fromFa(text: string): number {
-  return Number(text.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/\D/g, ""));
-}
+const AREAS = [
+  "commercial-contracts",
+  "intellectual-property",
+  "arbitration",
+  "formation-and-structure",
+  "mergers-and-acquisitions",
+  "compliance-and-governance",
+  "commercial-litigation",
+  "employment",
+  "real-estate",
+];
+const ROUTES = ["/", "/practice/", "/notes/", "/about/", ...AREAS.map((s) => `/practice/${s}/`)];
 
 /**
- * Every control on the page must have a non-empty accessible name.
- *
- * This exists because the interface strings moved out of the components and
- * into `src/content/ui.ts`. A mistyped path there does not throw and does not
- * render visibly wrong — the button still draws, still works, and simply stops
- * announcing itself, or announces the word "undefined". That is invisible to
- * every other check in this file and to anyone looking at the screen.
+ * Every control must have a non-empty accessible name. The interface strings
+ * live in `src/content/ui.ts`; a mistyped key there renders nothing visibly
+ * wrong — the link still draws — and simply stops announcing itself, or
+ * announces "undefined".
  */
 async function namelessControls(page: Page): Promise<string[]> {
   return page.evaluate(() =>
     [...document.querySelectorAll("button, a[href]")]
       .filter((el) => (el as HTMLElement).checkVisibility({ visibilityProperty: true }))
-      // An aria-hidden subtree is not in the accessibility tree, so nothing in
-      // it needs a name. The product cards put a second, deliberately hidden
-      // link on the image behind the named one — skipping these is the
-      // difference between a check and a false alarm.
       .filter((el) => el.closest('[aria-hidden="true"]') === null)
       .filter((el) => {
         const label = el.getAttribute("aria-label");
         const name = label === null ? (el.textContent ?? "") : label;
-        return name.trim() === "" || name.includes("undefined");
+        return name.trim() === "" || name.includes("undefined") || /\{\w+\}/.test(name);
       })
       .map((el) => `${el.tagName.toLowerCase()}.${el.className || "(no class)"}`),
   );
@@ -56,7 +57,6 @@ async function namelessControls(page: Page): Promise<string[]> {
 function watch(page: Page) {
   const consoleErrors: string[] = [];
   const failed: string[] = [];
-
   page.on("console", (m) => {
     if (m.type() === "error") consoleErrors.push(m.text());
   });
@@ -64,288 +64,148 @@ function watch(page: Page) {
   page.on("response", (r) => {
     if (r.status() >= 400) failed.push(`${r.status()} ${r.url()}`);
   });
-
   return { consoleErrors, failed };
 }
 
-test("homepage renders, is RTL, and loads every asset", async ({ page }) => {
+test("the homepage renders, is RTL, and loads every asset", async ({ page }) => {
   const { consoleErrors, failed } = watch(page);
+  const response = await page.goto(`${BASE}/`);
+  expect(response?.status()).toBe(200);
 
-  await page.goto(`${BASE}/`);
+  expect(await page.getAttribute("html", "dir")).toBe("rtl");
+  expect(await page.getAttribute("html", "lang")).toBe("fa");
+  expect(await page.evaluate(() => getComputedStyle(document.body).direction)).toBe("rtl");
 
-  await expect(page.locator("h1")).toHaveText("زیبایی، آهسته اتفاق می‌افتد");
-  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-  await expect(page.locator("html")).toHaveAttribute("lang", "fa");
+  await expect(page.locator("h1")).toHaveCount(1);
+  // Nine areas in three groups, each an ordered list of three.
+  await expect(page.locator(".area-index section")).toHaveCount(3);
+  await expect(page.locator(".area-list > li")).toHaveCount(9);
 
-  // Native RTL, not just an attribute — the grid must resolve right-to-left.
-  const direction = await page.evaluate(() => getComputedStyle(document.body).direction);
-  expect(direction).toBe("rtl");
-
-  // Walk the page so lazy images and scroll reveals all fire.
   await page.evaluate(async () => {
-    const height = document.body.scrollHeight;
-    for (let y = 0; y < height; y += 400) {
-      window.scrollTo({ top: y, behavior: "instant" });
-      await new Promise((r) => setTimeout(r, 50));
-    }
+    for (const img of document.images) img.loading = "eager";
+    await Promise.all([...document.images].map((i) => i.decode().catch(() => null)));
   });
-
-  // Regression: next/image does not apply basePath when images are unoptimized,
-  // which silently broke all 26 images on the project site.
-  const broken = await page.evaluate(
-    () =>
-      [...document.querySelectorAll("img")].filter((i) => i.complete && i.naturalWidth === 0)
-        .length,
+  const broken = await page.evaluate(() =>
+    [...document.images].filter((i) => i.naturalWidth === 0).map((i) => i.src),
   );
-  expect(broken, "images failing to load").toBe(0);
+  expect(broken, "broken images").toEqual([]);
 
-  const overflows = await page.evaluate(
-    () => document.documentElement.scrollWidth > window.innerWidth + 1,
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
-  expect(overflows, "horizontal overflow").toBe(false);
+  expect(overflow, "horizontal overflow").toBe(0);
 
-  expect(failed, "failed requests").toEqual([]);
+  expect(await namelessControls(page), "controls without an accessible name").toEqual([]);
   expect(consoleErrors, "console errors").toEqual([]);
+  expect(failed, "failed requests").toEqual([]);
 });
 
-test("gallery lightbox opens and closes", async ({ page }) => {
-  await page.goto(`${BASE}/`);
-
-  // Nothing else in this suite sees the header, footer and tile controls at
-  // rest, and they are where most of `ui.ts` is consumed.
-  expect(await namelessControls(page), "controls with no accessible name").toEqual([]);
-
-  const firstTile = page.locator("#gallery .gallery-tile").first();
-  await firstTile.scrollIntoViewIfNeeded();
-  await firstTile.click();
-
-  const dialog = page.locator("dialog.lightbox");
-  await expect(dialog).toBeVisible();
-  await expect(dialog).toHaveJSProperty("open", true);
-  await expect(dialog).toHaveAttribute("aria-label", /\S/);
-
-  // The lightbox's own controls exist only while it is open, so they are absent
-  // from the exported HTML and can only be checked here.
-  expect(await namelessControls(page), "lightbox controls with no name").toEqual([]);
-
-  await page.keyboard.press("Escape");
-  await expect(dialog).toHaveJSProperty("open", false);
-});
-
-test("a product route survives a hard load under the base path", async ({ page }) => {
+test("every practice route survives a hard load under the base path", async ({ page }) => {
   const { consoleErrors, failed } = watch(page);
 
-  // Hard load, not a client-side navigation: this is the case that 404'd on the
-  // dynamic route's RSC payload, and the case a static host has to get right.
-  const response = await page.goto(`${BASE}/products/shab/`);
-  expect(response?.status()).toBe(200);
+  for (const slug of AREAS) {
+    const response = await page.goto(`${BASE}/practice/${slug}/`);
+    expect(response?.status(), slug).toBe(200);
 
-  await expect(page.locator("h1")).toHaveText("سرم شب");
+    await expect(page.locator("h1"), `${slug} has one h1`).toHaveCount(1);
+    await expect(page.locator(".essay .marginal"), `${slug} marginal note`).toHaveCount(1);
+    await expect(page.locator(".essay .initial"), `${slug} word-scale initial`).toHaveCount(1);
 
-  // Regression: a raw <a href="/"> skips basePath and leaves the site entirely.
-  const homeLink = page.locator('nav[aria-label="مسیر صفحه"] a').first();
-  await expect(homeLink).toHaveAttribute("href", `${BASE}/`);
+    // Two or three reference marks, each a real link to a note.
+    const marks = await page.locator("a.refmark").evaluateAll((els) =>
+      els.map((a) => ({ id: a.id, href: a.getAttribute("href"), label: a.getAttribute("aria-label") })),
+    );
+    expect(marks.length, `${slug} mark count`).toBeGreaterThanOrEqual(2);
+    expect(marks.length, `${slug} mark count`).toBeLessThanOrEqual(3);
+    for (const mark of marks) {
+      expect(mark.href, `${slug} mark target`).toMatch(new RegExp(`^${BASE}/notes/#note-[123]$`));
+      expect(mark.id, `${slug} mark id`).toMatch(new RegExp(`^ref-${slug}-\\d$`));
+      expect(mark.label, `${slug} mark name`).toMatch(/^یادداشت [۱۲۳]: /);
+    }
 
-  // The site's only conversion point (§42). A malformed number or an unencoded
-  // message produces a link that looks fine and opens an empty chat.
-  const inquiry = page.locator('a[href^="https://wa.me/"]');
-  const inquiryHref = await inquiry.getAttribute("href");
-  expect(inquiryHref, "WhatsApp inquiry link").toBeTruthy();
-  expect(decodeURIComponent(inquiryHref!), "product name prefilled").toContain("سرم شب");
-  expect(inquiryHref!, "digits only in the wa.me path").toMatch(/^https:\/\/wa\.me\/\d+\?text=/);
-  await expect(inquiry).toHaveAttribute("rel", /noopener/);
-
-  // Related products must lead somewhere else — a page linking to itself here
-  // is the failure mode of every naive "related" implementation.
-  const relatedLinks = await page
-    .locator('section[aria-labelledby="related-heading"] article a[href]')
-    .evaluateAll((els) => els.map((el) => el.getAttribute("href") ?? ""));
-  expect(relatedLinks.length).toBeGreaterThan(0);
-  expect(relatedLinks.some((href) => href.includes("/products/shab"))).toBe(false);
-
-  expect(failed, "failed requests").toEqual([]);
-  expect(consoleErrors, "console errors").toEqual([]);
-});
-
-test("the collection page lists the catalogue and its index resolves", async ({ page }) => {
-  const { consoleErrors, failed } = watch(page);
-
-  const response = await page.goto(`${BASE}/products/`);
-  expect(response?.status()).toBe(200);
-
-  await expect(page.locator("h1")).toHaveText("همهٔ محصولات، کنار هم");
-
-  // Regression: nav hrefs written as bare hashes pointed at homepage sections
-  // and resolved to nothing once the header rendered on a second page.
-  await expect(
-    page.locator('header nav[aria-label="پیمایش اصلی"] a[aria-current="page"]'),
-  ).toHaveText("محصولات");
-
-  // The index is only structure if its targets exist. A category anchor that
-  // points at a removed product fails silently — the page just does not move.
-  const items = page.locator("article[id^='product-']");
-  const count = await items.count();
-  expect(count).toBeGreaterThan(0);
-
-  const anchors = await page
-    .locator(".collection-index__link")
-    .evaluateAll((els) => els.map((el) => el.getAttribute("href") ?? ""));
-  expect(anchors.length).toBeGreaterThan(0);
-  for (const anchor of anchors) {
-    await expect(page.locator(anchor), `index anchor ${anchor}`).toHaveCount(1);
+    // The other two areas in the group, and the index.
+    await expect(page.locator(".linkset li"), `${slug} related links`).toHaveCount(3);
+    expect(await namelessControls(page), `${slug} nameless controls`).toEqual([]);
   }
 
-  // The printed count is derived, so it must never disagree with what is shown.
-  const printed = await page.locator(".collection-index p.t-meta").innerText();
-  expect(fromFa(printed)).toBe(count);
-
-  await page.evaluate(async () => {
-    const height = document.body.scrollHeight;
-    for (let y = 0; y < height; y += 400) {
-      window.scrollTo({ top: y, behavior: "instant" });
-      await new Promise((r) => setTimeout(r, 50));
-    }
-  });
-
-  const broken = await page.evaluate(
-    () =>
-      [...document.querySelectorAll("img")].filter((i) => i.complete && i.naturalWidth === 0)
-        .length,
-  );
-  expect(broken, "images failing to load").toBe(0);
-
-  const overflows = await page.evaluate(
-    () => document.documentElement.scrollWidth > window.innerWidth + 1,
-  );
-  expect(overflows, "horizontal overflow").toBe(false);
-
-  expect(failed, "failed requests").toEqual([]);
   expect(consoleErrors, "console errors").toEqual([]);
+  expect(failed, "failed requests").toEqual([]);
 });
 
-test("the gallery page composes every plate and opens the right one", async ({ page }) => {
-  const { consoleErrors, failed } = watch(page);
+test("a reference mark and its note find each other in both directions", async ({ page }) => {
+  await page.goto(`${BASE}/practice/arbitration/`);
+  const mark = page.locator("a.refmark").first();
+  const markId = await mark.getAttribute("id");
+  const target = (await mark.getAttribute("href"))!.split("#")[1];
 
-  const response = await page.goto(`${BASE}/gallery/`);
-  expect(response?.status()).toBe(200);
+  await mark.click();
+  await expect(page).toHaveURL(new RegExp(`${BASE}/notes/#${target}$`));
+  await expect(page.locator(`#${target}`)).toHaveCount(1);
 
-  await expect(page.locator("h1")).toHaveText("تصویرها، بی‌عجله");
-  await expect(
-    page.locator('header nav[aria-label="پیمایش اصلی"] a[aria-current="page"]'),
-  ).toHaveText("گالری");
-
-  // Every image must survive the banding. A composition that drops the last
-  // item when the count is odd loses it silently.
-  const tiles = page.locator(".ground-light-deep .gallery-tile");
-  const count = await tiles.count();
-  expect(count).toBeGreaterThan(0);
-
-  // The plates are laid out in bands, so each tile has a position within its
-  // band *and* a position in the gallery. The lightbox needs the second one —
-  // passing the band-local index opens the wrong picture, which looks like a
-  // working lightbox rather than like a bug.
-  const third = tiles.nth(2);
-  await third.scrollIntoViewIfNeeded();
-  await third.click();
-  const dialog = page.locator("dialog.lightbox");
-  await expect(dialog).toHaveJSProperty("open", true);
-  await expect(dialog.locator(".t-h3")).toHaveText("سرم شب");
-
-  await page.keyboard.press("Escape");
-  await expect(dialog).toHaveJSProperty("open", false);
-
-  const broken = await page.evaluate(
-    () =>
-      [...document.querySelectorAll("img")].filter((i) => i.complete && i.naturalWidth === 0)
-        .length,
-  );
-  expect(broken, "images failing to load").toBe(0);
-
-  const overflows = await page.evaluate(
-    () => document.documentElement.scrollWidth > window.innerWidth + 1,
-  );
-  expect(overflows, "horizontal overflow").toBe(false);
-
-  expect(failed, "failed requests").toEqual([]);
-  expect(consoleErrors, "console errors").toEqual([]);
+  // The note lists a way back to this exact mark, not just to the page.
+  const back = page.locator(`#${target} .backrefs a[href$="#${markId}"]`);
+  await expect(back).toHaveCount(1);
+  await back.click();
+  await expect(page).toHaveURL(new RegExp(`${BASE}/practice/arbitration/#${markId}$`));
+  await expect(page.locator(`#${markId}`)).toHaveCount(1);
 });
 
-test("the about page owns the contact anchor and both inquiry paths", async ({ page }) => {
-  const { consoleErrors, failed } = watch(page);
+test("the notes page carries all three notes and every back-reference resolves", async ({ page }) => {
+  await page.goto(`${BASE}/notes/`);
+  await expect(page.locator("article.note")).toHaveCount(3);
 
-  const response = await page.goto(`${BASE}/about/`);
-  expect(response?.status()).toBe(200);
-  await expect(page.locator("h1")).toHaveText("چرا مجموعه کوچک است");
+  const backs = await page
+    .locator(".backrefs a")
+    .evaluateAll((els) => els.map((a) => a.getAttribute("href")!));
+  // Twenty-one marks across nine pages; every one gets its own way back.
+  expect(backs.length).toBe(21);
 
-  // Exactly one #contact. The footer carried this id through Phase 01 and the
-  // footer renders on this page too — two of them is a silent duplicate-id
-  // defect that makes the nav anchor land on whichever comes first.
-  await expect(page.locator("#contact")).toHaveCount(1);
-
-  // Both inquiry paths of §42, and neither may be a dead "#".
-  const chat = page.locator('#contact a[href^="https://wa.me/"]');
-  await expect(chat).toHaveCount(1);
-  await expect(chat).toHaveAttribute("rel", /noopener/);
-
-  const instagram = page.locator('#contact a[href*="instagram.com"]');
-  await expect(instagram).toHaveCount(1);
-  await expect(instagram).toHaveAttribute("rel", /noopener/);
-
-  // No link anywhere on the page may be a bare "#": it looks like a link,
-  // focuses like a link, and jumps the reader to the top of the page.
-  const deadLinks = await page
-    .locator('a[href="#"]')
-    .evaluateAll((els) => els.map((el) => (el.textContent ?? "").trim()));
-  expect(deadLinks, "links pointing at #").toEqual([]);
-
-  const broken = await page.evaluate(
-    () =>
-      [...document.querySelectorAll("img")].filter((i) => i.complete && i.naturalWidth === 0)
-        .length,
-  );
-  expect(broken, "images failing to load").toBe(0);
-
-  expect(failed, "failed requests").toEqual([]);
-  expect(consoleErrors, "console errors").toEqual([]);
+  for (const href of backs) {
+    const [path, id] = href.split("#");
+    const html = await (await page.request.get(path)).text();
+    expect(html, `${href} resolves`).toContain(`id="${id}"`);
+  }
 });
 
-test("every route carries its own metadata, under the deployed base path", async ({ page }) => {
-  const routes = [
-    "/",
-    "/products/",
-    "/gallery/",
-    "/about/",
-    "/products/shab/",
-    "/products/aram/",
-  ];
+test("the index lists nine areas and the masthead's group anchors land on it", async ({ page }) => {
+  await page.goto(`${BASE}/practice/`);
+  await expect(page.locator(".area-list > li")).toHaveCount(9);
 
+  const anchors = await page
+    .locator(".masthead-nav a")
+    .evaluateAll((els) => els.map((a) => a.getAttribute("href")!));
+  expect(anchors.length).toBe(3);
+  for (const href of anchors) {
+    const id = href.split("#")[1];
+    await expect(page.locator(`#${id}`), `${href} resolves`).toHaveCount(1);
+  }
+});
+
+test("every route carries its own metadata, noindexed, under the base path", async ({ page }) => {
   const seen = new Map<string, string[]>();
 
-  for (const route of routes) {
+  for (const route of ROUTES) {
     await page.goto(`${BASE}${route}`);
 
     const meta = await page.evaluate(() => ({
       title: document.title,
-      description: document
-        .querySelector('meta[name="description"]')
-        ?.getAttribute("content"),
+      description: document.querySelector('meta[name="description"]')?.getAttribute("content"),
       canonical: document.querySelector('link[rel="canonical"]')?.getAttribute("href"),
       ogTitle: document.querySelector('meta[property="og:title"]')?.getAttribute("content"),
       ogUrl: document.querySelector('meta[property="og:url"]')?.getAttribute("content"),
       ogImage: document.querySelector('meta[property="og:image"]')?.getAttribute("content"),
+      robots: document.querySelector('meta[name="robots"]')?.getAttribute("content"),
     }));
 
     expect(meta.title, `${route} title`).toBeTruthy();
     expect(meta.description, `${route} description`).toBeTruthy();
+    expect(meta.ogTitle, `${route} og:title matches the title`).toBe(meta.title);
 
-    // og:title was set once in the root layout and inherited by every route, so
-    // a shared link to any page previewed as the homepage.
-    expect(meta.ogTitle, `${route} og:title matches the page title`).toBe(meta.title);
+    // On a Pages project site robots.txt sits where no crawler reads it; the
+    // meta tag is what keeps a demonstration of a fictional firm unindexed.
+    expect(meta.robots, `${route} robots meta`).toMatch(/noindex/);
+    expect(meta.robots, `${route} robots meta`).toMatch(/nofollow/);
 
-    // The canonical has to carry the base path. `configure-pages` reports the
-    // origin and the base path as two separate values, and a canonical built
-    // from the origin alone points at someone else's site — which actively
-    // tells a search engine to index that one instead of this one.
     for (const [name, value] of [
       ["canonical", meta.canonical],
       ["og:url", meta.ogUrl],
@@ -354,13 +214,10 @@ test("every route carries its own metadata, under the deployed base path", async
       expect(value, `${route} ${name} is absolute`).toMatch(/^https?:\/\//);
       if (BASE) expect(value, `${route} ${name} carries the base path`).toContain(`${BASE}/`);
     }
-
-    expect(new URL(meta.canonical!).pathname, `${route} canonical points at itself`).toBe(
-      `${BASE}${route}`,
-    );
+    expect(new URL(meta.canonical!).pathname, `${route} canonical points at itself`).toBe(`${BASE}${route}`);
 
     for (const [field, value] of Object.entries(meta)) {
-      if (field === "ogImage") continue; // one card, shared by every route on purpose
+      if (field === "ogImage" || field === "robots") continue; // shared on purpose
       const list = seen.get(field) ?? [];
       expect(list, `${route} ${field} is unique across routes`).not.toContain(value);
       list.push(value as string);
@@ -369,137 +226,75 @@ test("every route carries its own metadata, under the deployed base path", async
   }
 });
 
-test("the sitemap and robots.txt are exported and absolute", async ({ page }) => {
+test("the sitemap lists thirteen absolute routes and robots.txt disallows all", async ({ page }) => {
   const sitemap = await page.request.get(`${BASE}/sitemap.xml`);
   expect(sitemap.status()).toBe(200);
   const xml = await sitemap.text();
-
-  // Every exported route must be listed, and every entry absolute — a relative
-  // <loc> is invalid in a sitemap and is dropped silently.
-  for (const route of ["/", "/products/", "/gallery/", "/about/", "/products/shab/"]) {
-    expect(xml, `sitemap lists ${route}`).toContain(`${BASE}${route}</loc>`);
-  }
-  expect(xml.match(/<loc>/g)?.length, "sitemap entry count").toBe(9);
+  for (const route of ROUTES) expect(xml, `sitemap lists ${route}`).toContain(`${BASE}${route}</loc>`);
+  expect(xml.match(/<loc>/g)?.length, "sitemap entry count").toBe(13);
   expect(xml, "no relative loc").not.toMatch(/<loc>\//);
-
-  // Drafts are filtered out of publishedProducts and must not be advertised.
-  expect(xml, "no draft product").not.toContain("/404");
 
   const robots = await page.request.get(`${BASE}/robots.txt`);
   expect(robots.status()).toBe(200);
-  expect(await robots.text(), "robots points at the sitemap").toContain(
-    `${BASE}/sitemap.xml`,
-  );
+  expect(await robots.text()).toMatch(/Disallow: \/\s*$/m);
 });
 
-test("structured data parses and claims nothing invented", async ({ page }) => {
-  await page.goto(`${BASE}/products/shab/`);
-
+test("structured data parses and claims nothing about a firm that does not exist", async ({ page }) => {
+  await page.goto(`${BASE}/`);
   const blocks = await page
     .locator('script[type="application/ld+json"]')
     .evaluateAll((els) => els.map((el) => el.textContent ?? ""));
-  expect(blocks.length, "Organization + Product").toBe(2);
+  expect(blocks.length, "one Organization block").toBe(1);
 
-  const parsed = blocks.map((b) => JSON.parse(b) as Record<string, unknown>);
-  const product = parsed.find((p) => p["@type"] === "Product")!;
-  const organization = parsed.find((p) => p["@type"] === "Organization")!;
-
-  expect(product.name).toBe("سرم شب");
-  expect(String(product.url)).toContain(`${BASE}/products/shab/`);
-
-  // The point of the schema file: it must stay a mapping of data that exists.
-  // `offers` and a rating are what a generator would invent to earn a rich
-  // result, and this site has no commerce and no reviews at all.
-  for (const field of ["offers", "aggregateRating", "review", "sku", "gtin"]) {
-    expect(product[field], `Product must not assert ${field}`).toBeUndefined();
+  const org = JSON.parse(blocks[0]) as Record<string, unknown>;
+  expect(org["@type"]).toBe("Organization");
+  expect(String(org.url)).toContain(`${BASE}/`);
+  for (const field of [
+    "sameAs",
+    "logo",
+    "founder",
+    "foundingDate",
+    "award",
+    "memberOf",
+    "hasCredential",
+    "aggregateRating",
+    "review",
+    "areaServed",
+    "address",
+    "telephone",
+  ]) {
+    expect(org[field], `Organization must not assert ${field}`).toBeUndefined();
   }
-  // The social handles are `.example` placeholders; sameAs would claim the
-  // brand owns accounts that do not resolve.
-  expect(organization.sameAs, "Organization must not assert sameAs").toBeUndefined();
 });
 
-/**
- * Found in the Part 4 full-site pass, which is the only pass that ever left the
- * mobile menu by a route rather than by the close button.
- *
- * Four of the six internal controls in the panel carried `onClick={onClose}`.
- * The lockup and the CTA did not — and `Button` accepted an `onClick` it then
- * dropped for links, so even passing one would not have helped. Tapping either
- * navigated underneath a panel that stayed over the whole screen with
- * `body { overflow: hidden }` still set, stranding a phone visitor on the
- * site's primary mobile call to action.
- *
- * Asserted for every control rather than for the two that were broken: the
- * defect is one control forgetting, so the check has to be the whole set.
- */
-test("every control that leaves the mobile menu closes it", async ({ page }, testInfo) => {
-  // The toggle is `lg:hidden`; above that breakpoint the panel is not part of
-  // the interface at all, so this is a mobile-project test by nature.
-  test.skip(
-    (testInfo.project.use.viewport?.width ?? 0) >= 1024,
-    "the mobile panel does not exist at desktop widths",
-  );
-
+test("contact runs through two plain links, and there is no form", async ({ page }) => {
   await page.goto(`${BASE}/`);
+  const tel = page.locator('.cta-links a[href^="tel:"]');
+  await expect(tel).toHaveCount(1);
 
-  const panel = page.locator(".menu-panel");
-  const internal = page.locator('.menu-panel a[href^="/"]');
+  const chat = page.locator('.cta-links a[href^="https://wa.me/"]');
+  const href = (await chat.getAttribute("href"))!;
+  expect(decodeURIComponent(href.split("?text=")[1])).toContain("دادآور");
+  expect(await chat.getAttribute("target")).toBe("_blank");
+  expect(await chat.getAttribute("rel")).toContain("noopener");
 
-  await page.locator(".menu-toggle").first().click();
-  await expect(panel).toHaveAttribute("data-open", "true");
-  const count = await internal.count();
-  expect(count, "the panel's own links").toBeGreaterThan(3);
-
-  for (let i = 0; i < count; i += 1) {
-    await page.goto(`${BASE}/`);
-    await page.locator(".menu-toggle").first().click();
-    await expect(panel).toHaveAttribute("data-open", "true");
-
-    const href = await internal.nth(i).getAttribute("href");
-    await internal.nth(i).click();
-
-    await expect(panel, `${href} left the panel open`).toHaveAttribute("data-open", "false");
-    // The panel locks page scrolling while it is open; a panel that closes
-    // without releasing that lock leaves a page nobody can scroll.
-    await expect
-      .poll(() => page.evaluate(() => document.body.style.overflow), {
-        message: `${href} left the page scroll-locked`,
-      })
-      .not.toBe("hidden");
-  }
-});
-
-test("an unknown path serves the styled 404", async ({ page }) => {
-  const response = await page.goto(`${BASE}/definitely-not-a-page/`);
-
-  expect(response?.status()).toBe(404);
-  await expect(page.locator("h1")).toHaveText("این نشانی وجود ندارد");
-});
-
-/**
- * A form with nowhere to post is worse than no form: on a static host the
- * browser falls back to a GET at the current URL, so the page reloads, the
- * scroll position is lost, and whatever the visitor typed — an email address,
- * here — is written into the URL and therefore into history and any outgoing
- * referrer. The footer shipped exactly that from Phase 01 until the final pass
- * measured it. §42 permits a form only when it posts to a real third-party
- * backend, so this asserts the site has no form that resolves to neither.
- */
-test("no route carries a form that submits nowhere", async ({ page }) => {
-  const routes = ["/", "/products/", "/gallery/", "/about/", "/products/shab/"];
-
-  for (const route of routes) {
+  for (const route of ROUTES) {
     await page.goto(`${BASE}${route}`);
-
-    const dead = await page.evaluate(() =>
-      [...document.querySelectorAll("form")]
-        .filter((f) => {
-          const action = f.getAttribute("action");
-          return action === null || action === "" || action === "#";
-        })
-        .map((f) => f.className || "(no class)"),
-    );
-
-    expect(dead, `${route} has a form posting nowhere`).toEqual([]);
+    const counts = await page.evaluate(() => ({
+      forms: document.querySelectorAll("form, input, textarea, select").length,
+      tables: document.querySelectorAll("table").length,
+    }));
+    expect(counts.forms, `${route} has no form`).toBe(0);
+    expect(counts.tables, `${route} has no table`).toBe(0);
   }
+});
+
+test("an unknown path answers 404 with a way back", async ({ page }) => {
+  const response = await page.goto(`${BASE}/no-such-page/`);
+  expect(response?.status()).toBe(404);
+  await expect(page.locator("h1")).toHaveCount(1);
+  const links = await page
+    .locator(".linkset a")
+    .evaluateAll((els) => els.map((a) => a.getAttribute("href")));
+  expect(links).toEqual([`${BASE}/`, `${BASE}/practice/`]);
 });
