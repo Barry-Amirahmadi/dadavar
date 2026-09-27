@@ -4,7 +4,7 @@ An editorial-authority site for a **fictional** Persian law firm — a design
 demonstration, not a firm, and nothing on it is legal advice. RTL-first,
 static export, GitHub Pages.
 
-**Live:** https://barry-amirahmadi.github.io/dadavar/ (once Pages is enabled)
+**Live:** https://barry-amirahmadi.github.io/dadavar/
 
 ## Routes
 
